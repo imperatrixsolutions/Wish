@@ -1,0 +1,255 @@
+####################################################################################################################
+##                                             Welcome to crates.yml                                              ##
+##                       There are three types of animations: interface, physical, and none                       ##
+## Interface just opens a menu, physical plays an animation on the crate, and none just gives rewards immediately ##
+##     Do not worry about changing or setting UUIDs, if one is not found, one will be automatically generated     ##
+####################################################################################################################
+
+Crates:
+  Standard:
+    UUID: 528559cd-9487-4125-a244-b6ac47f4d27c # Do not touch
+    Animation-Type: INTERFACE
+    Reward-Tiers:
+      one-star:
+        Pity: false
+        Pity-Limit: 0
+        Chance: 45
+        Display-Item: "white_stained_glass_pane name:&7✦ lore:&7Click_to_reveal_reward"
+        Color:
+          R: 184
+          G: 184
+          B: 184
+        Rewards:
+          Dull-Blade:
+            Display-Item: "iron_sword 1 name:&7Dull_Blade lore:&8✦|&7|&7&o25%_Chance"
+            Chance: 25
+            Items:
+              - "iron_sword 1 name:&7Dull_Blade lore:&8✦"
+          Flaming-Blade:
+            Display-Item: "iron_sword 1 fire_aspect:1 name:&7Flaming_Blade lore:&8✦|&7|&7&o25%_Chance"
+            Chance: 25
+            Items:
+              - "iron_sword 1 fire_aspect:1 name:&7Flaming_Blade lore:&8✦"
+          Small-Obsidian-Bundle:
+            Display-Item: "obsidian 32 lore:&8✦|&7|&7&o25%_Chance"
+            Chance: 25
+            Items:
+              - "obsidian 32 lore:&8✦"
+          Cooked-Meat:
+            Display-Item: "cooked_beef 64 lore:&8✦|&7|&7&o25%_Chance"
+            Chance: 25
+            Items:
+              - "cooked_beef 64 lore:&8✦"
+      two-star:
+        Pity: false
+        Pity-Limit: 0
+        Chance: 35
+        Display-Item: "yellow_stained_glass_pane name:&e✦✦ lore:&7Click_to_reveal_reward"
+        Color:
+          R: 255
+          G: 255
+          B: 61
+        Rewards:
+          Sharpened-Blade:
+            Display-Item: "iron_sword 1 sharpness:1 name:&7Sharpened_Blade lore:&8✦✦|&7|&7&o25%_Chance"
+            Chance: 25
+            Items:
+              - "iron_sword 1 sharpness:1 name:&7Sharpened_Blade lore:&8✦✦"
+          Blistering-Blade:
+            Display-Item: "iron_sword 1 fire_aspect:2 name:&7Blistering_Blade lore:&8✦✦|&7|&7&o25%_Chance"
+            Chance: 25
+            Items:
+              - "iron_sword 1 fire_aspect:2 name:&7Blistering_Blade lore:&8✦✦"
+          Obsidian-Bundle:
+            Display-Item: "obsidian 64 lore:&8✦✦|&7|&7&o25%_Chance"
+            Chance: 25
+            Items:
+              - "obsidian 64 lore:&8✦✦"
+          Skeleton-Spawner:
+            Display-Item: "spawner 1 name:&eSkeleton_Spawner lore:&8✦✦|&7|&7&o25%_Chance"
+            Chance: 25
+            Commands:
+              - "spawner give %player% skeleton 1"
+      three-star:
+        Pity: false
+        Pity-Limit: 0
+        Chance: 17
+        Display-Item: "light_blue_stained_glass_pane name:&b✦✦✦ lore:&7Click_to_reveal_reward"
+        Color:
+          R: 61
+          G: 255
+          B: 255
+        Rewards:
+          Refined-Blade:
+            Display-Item: "diamond_sword 1 sharpness:3 fire_aspect:2 name:&7Refined_Blade lore:&8✦✦✦|&7|&7&o33.33%_Chance"
+            Chance: 33.33
+            Items:
+              - "diamond_sword 1 sharpness:3 fire_aspect:2 name:&7Refined_Blade lore:&8✦✦✦"
+          Refined-Pickaxe:
+            Display-Item: "diamond_pickaxe 1 efficiency:3 unbreaking:2 name:&7Refined_Pickaxe lore:&8✦✦✦|&7|&7&o33.33%_Chance"
+            Chance: 33.33
+            Items:
+              - "diamond_pickaxe 1 efficiency:3 unbreaking:2 name:&7Refined_Pickaxe lore:&8✦✦✦"
+          IG-Spawner:
+            Display-Item: "spawner 1 name:&eIron_Golem_Spawner lore:&8✦✦✦|&7|&7&o33.34%_Chance"
+            Chance: 33.34
+            Commands:
+              - "spawner give %player% iron_golem 1"
+      four-star:
+        Pity: true
+        Pity-Limit: 10
+        Chance: 2.5
+        Display-Item: "pink_stained_glass_pane name:&d✦✦✦✦ lore:&7Click_to_reveal_reward"
+        Color:
+          R: 255
+          G: 61
+          B: 255
+        Rewards:
+          Masters-Blade:
+            Display-Item: "diamond_sword 1 sharpness:5 fire_aspect:2 unbreaking:3 name:&eMaster's_Blade lore:&d✦✦✦✦|&7|&7&o33.33%_Chance"
+            Chance: 33.33
+            Items:
+              - "diamond_sword 1 sharpness:5 fire_aspect:2 unbreaking:3 name:&eMaster's_Blade lore:&d✦✦✦✦"
+          Masters-Pickaxe:
+            Display-Item: "diamond_pickaxe 1 efficiency:5 unbreaking:3 name:&eMaster's_Pickaxe lore:&d✦✦✦✦|&7|&7&o33.33%_Chance"
+            Chance: 33.33
+            Items:
+              - "diamond_pickaxe 1 efficiency:5 unbreaking:3 name:&eMaster's_Pickaxe lore:&d✦✦✦✦"
+          Spawner-Pack:
+            Display-Item: "spawner 1 name:&eSpawner_Pack lore:&d✦✦✦✦|&7Contains_1x_IG_Spawner_1x_Enderman_Spawner|&7|&7&o33.34%_Chance"
+            Chance: 33.34
+            Commands:
+              - "spawner give %player% iron_golem 1"
+              - "spawner give %player% enderman 1"
+      five-star:
+        Pity: true
+        Pity-Limit: 90
+        Chance: 0.5
+        Display-Item: "red_stained_glass_pane name:&c✦✦✦✦✦ lore:&7Click_to_reveal_reward"
+        Color:
+          R: 255
+          G: 61
+          B: 61
+        Rewards:
+          Masters-Set:
+            Display-Item: "DIAMOND_SWORD 1 sharpness:5 fire_aspect:2 unbreaking:3 looting:3 name:&eMaster's_Toolset lore:&6✦✦✦✦✦|&7|&7&o50%_Chance"
+            Chance: 50
+            Items:
+              - "diamond_sword 1 sharpness:5 fire_aspect:2 unbreaking:3 looting:3 name:&e&lMaster's_Blade lore:&6✦✦✦✦✦"
+              - "diamond_pickaxe 1 efficiency:5 unbreaking:3 fortune:3 name:&e&lMaster's_Pickaxe lore:&6✦✦✦✦✦"
+              - "diamond_axe 1 efficiency:5 unbreaking:3 fortune:3 name:&e&lMaster's_Axe lore:&6✦✦✦✦✦"
+              - "diamond_shovel 1 efficiency:5 unbreaking:3 fortune:3 name:&e&lMaster's_Shovel lore:&6✦✦✦✦✦"
+          Spawner-Pack:
+            Display-Item: "spawner 1 name:&eSpawner_Pack lore:&6✦✦✦✦✦|&7Contains_2x_IG_Spawner_2x_Enderman_Spawner_6x_Skeleton_Spawner|&7|&7&o50%_Chance"
+            Chance: 50
+            Commands:
+              - "spawner give %player% iron_golem 2"
+              - "spawner give %player% enderman 2"
+              - "spawner give %player% skeleton 6"
+  Limited:
+    UUID: 3bd2f4d8-2559-4993-97aa-eea40ffd84ca # Do not touch
+    Animation-Type: PHYSICAL
+    Reward-Tiers:
+      two-star:
+        Pity: false
+        Pity-Limit: 0
+        Chance: 65
+        Display-Item: "yellow_stained_glass_pane name:&e✦✦ lore:&7Click_to_reveal_reward"
+        Color:
+          R: 255
+          G: 255
+          B: 61
+        Rewards:
+          Sharpened-Blade:
+            Display-Item: "iron_sword 1 sharpness:1 name:&7Sharpened_Blade lore:&8✦✦|&7|&7&o25%_Chance"
+            Chance: 25
+            Items:
+              - "iron_sword 1 sharpness:1 name:&7Sharpened_Blade lore:&8✦✦"
+          Blistering-Blade:
+            Display-Item: "iron_sword 1 fire_aspect:2 name:&7Blistering_Blade lore:&8✦✦|&7|&7&o25%_Chance"
+            Chance: 25
+            Items:
+              - "iron_sword 1 fire_aspect:2 name:&7Blistering_Blade lore:&8✦✦"
+          Obsidian-Bundle:
+            Display-Item: "obsidian 64 lore:&8✦✦|&7|&7&o25%_Chance"
+            Chance: 25
+            Items:
+              - "obsidian 64 lore:&8✦"
+          Skeleton-Spawner:
+            Display-Item: "spawner 1 name:&eSkeleton_Spawner lore:&8✦✦|&7|&7&o25%_Chance"
+            Chance: 25
+            Commands:
+              - "spawner give %player% skeleton 1"
+      three-star:
+        Pity: false
+        Pity-Limit: 0
+        Chance: 29
+        Display-Item: "light_blue_stained_glass_pane name:&b✦✦✦ lore:&7Click_to_reveal_reward"
+        Color:
+          R: 61
+          G: 255
+          B: 255
+        Rewards:
+          Refined-Blade:
+            Display-Item: "diamond_sword 1 sharpness:3 fire_aspect:2 name:&7Refined_Blade lore:&8✦✦✦|&7|&7&o33.33%_Chance"
+            Chance: 33.33
+            Items:
+              - "diamond_sword 1 sharpness:3 fire_aspect:2 name:&7Refined_Blade lore:&8✦✦✦"
+          Refined-Pickaxe:
+            Display-Item: "diamond_pickaxe 1 efficiency:3 unbreaking:2 name:&7Refined_Pickaxe lore:&8✦✦✦|&7|&7&o33.33%_Chance"
+            Chance: 33.33
+            Items:
+              - "diamond_pickaxe 1 efficiency:3 unbreaking:2 name:&7Refined_Pickaxe lore:&8✦✦✦"
+          IG-Spawner:
+            Display-Item: "spawner 1 name:&eIron_Golem_Spawner lore:&8✦✦✦|&7|&7&o33.34%_Chance"
+            Chance: 33.34
+            Commands:
+              - "spawner give %player% iron_golem 1"
+      four-star:
+        Pity: true
+        Pity-Limit: 8
+        Chance: 5
+        Display-Item: "pink_stained_glass_pane name:&d✦✦✦✦ lore:&7Click_to_reveal_reward"
+        Color:
+          R: 255
+          G: 61
+          B: 255
+        Rewards:
+          Masters-Blade:
+            Display-Item: "diamond_sword 1 sharpness:5 fire_aspect:2 unbreaking:3 name:&eMaster's_Blade lore:&d✦✦✦✦|&7|&7&o33.33%_Chance"
+            Chance: 33.33
+            Items:
+              - "diamond_sword 1 sharpness:5 fire_aspect:2 unbreaking:3 name:&eMaster's_Blade lore:&d✦✦✦✦"
+          Masters-Pickaxe:
+            Display-Item: "diamond_pickaxe 1 efficiency:5 unbreaking:3 name:&eMaster's_Pickaxe lore:&d✦✦✦✦|&7|&7&o33.33%_Chance"
+            Chance: 33.33
+            Items:
+              - "diamond_pickaxe 1 efficiency:5 unbreaking:3 name:&eMaster's_Pickaxe lore:&d✦✦✦✦"
+          Spawner-Pack:
+            Display-Item: "spawner 1 name:&eSpawner_Pack lore:&d✦✦✦✦|&7Contains_1x_IG_Spawner_1x_Enderman_Spawner|&7|&7&o33.34%_Chance"
+            Chance: 33.34
+            Commands:
+              - "spawner give %player% iron_golem 2"
+              - "spawner give %player% enderman 1"
+      five-star:
+        Pity: true
+        Pity-Limit: 60
+        Chance: 1
+        Display-Item: "red_stained_glass_pane name:&c✦✦✦✦✦ lore:&7Click_to_reveal_reward"
+        Color:
+          R: 255
+          G: 61
+          B: 61
+        Rewards:
+          Lumine-Sword:
+            Display-Item: "iron_sword 1 custom_model_data:130 name:&eLumine_Sword lore:&6✦✦✦✦✦|&7|&7&o50%_Chance"
+            Chance: 50
+            Commands:
+              - "mi give sword LUMINE_SWORD %player% 1"
+          GladiatorsFinale-Set:
+            Display-Item: "bone 1 custom_model_data:22 name:&eGladiators_Final_Set lore:&6✦✦✦✦✦|&7Contains_3x_GladiatorsFinale_Pieces|&7|&7&o50%_Chance"
+            Chance: 50
+            Commands:
+              - "mi give ACCESSORY GLADIATORS_NOSTALGIA %player% 1"
+              - "mi give ACCESSORY GLADIATORS_INTOXICATION %player% 1"
+              - "mi give ACCESSORY GLADIATORS_DESTINY %player% 1"

@@ -1,0 +1,3 @@
+# The maximum amount a player can pull at once
+# Larger pulls on physical crates can cause FPS drops due to the number of particles
+Max-Pulls: 10
