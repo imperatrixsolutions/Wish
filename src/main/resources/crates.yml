@@ -123,7 +123,7 @@ Crates:
               - "spawner give %player% enderman 1"
       five-star:
         Pity: true
-        Pity-Limit: 90
+        Pity-Limit: 80
         Chance: 0.5
         Display-Item: "red_stained_glass_pane name:&c✦✦✦✦✦ lore:&7Click_to_reveal_reward"
         Color:
@@ -233,7 +233,7 @@ Crates:
               - "spawner give %player% enderman 1"
       five-star:
         Pity: true
-        Pity-Limit: 60
+        Pity-Limit: 80
         Chance: 1
         Display-Item: "red_stained_glass_pane name:&c✦✦✦✦✦ lore:&7Click_to_reveal_reward"
         Color:

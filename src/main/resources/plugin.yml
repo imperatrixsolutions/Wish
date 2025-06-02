@@ -4,7 +4,7 @@ main: imperatrix.wish.Wish
 api-version: '1.20'
 authors: [ mrlamaker ]
 description: Wish Gacha Plugin
-website: https://lamakers.store
+website: https://mrlamaker.cloud/shop
 commands:
   wish:
     description: Base command for crate management
