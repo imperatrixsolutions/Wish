@@ -11,11 +11,12 @@ import imperatrix.wish.util.MathUtil;
 import imperatrix.wish.util.ParticleUtil;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 import java.util.logging.Level;
-import java.util.stream.Collectors; // Added for stream operations
+import java.util.stream.Collectors;
 
 public class Crate {
     private final LinkedHashMap<RewardTier, Double> rewardProbabilityMap = new LinkedHashMap<>();
@@ -25,11 +26,11 @@ public class Crate {
     private final Set<Location> crateLocations = new HashSet<>();
     private final HashMap<Location, Boolean> inUse = new HashMap<>();
 
-    // New fields for 50/50 system
+    // Fields for 50/50 system
     private boolean isLimited5050Banner = false;
     private List<String> featured5StarRewardNames = new ArrayList<>();
-    private String fiveStarTierKeyName = "five-star"; // Default key name for the 5-star tier, can be made configurable
-    private RewardTier resolvedFiveStarTier; // To store the actual 5-star tier object for this crate
+    private String fiveStarTierKeyName = "five-star"; // Default key name, configurable
+    private RewardTier resolvedFiveStarTier; // Stores the actual 5-star tier object
 
     public Crate(String name) {
         this.name = name;
@@ -40,115 +41,89 @@ public class Crate {
     }
 
     /**
-     * Generate a random reward tier based on set probability
-     *
-     * @return Generated RewardTier
-     * @deprecated Use generateRewardTier(GachaPlayer player) for pity considerations
-     */
-    @Deprecated
-    public RewardTier generateRewardTier() {
-        double randDouble = Math.random();
-
-        for (Map.Entry<RewardTier, Double> rewardProbability : rewardProbabilityMap.entrySet()) {
-            if (randDouble <= rewardProbability.getValue()) { // This original logic for sorting might need re-evaluation if chances aren't cumulative
-                return rewardProbability.getKey();
-            }
-        }
-        // Fallback if map is empty or chances don't sum up correctly - should be handled by proper config.
-        // The original sortProbabilityMap sorts by value, which means lower chances come first.
-        // The logic should be: sum chances and check if randDouble falls within a tier's segment.
-        // Corrected logic for random selection based on cumulative probability:
-        double cumulativeProbability = 0.0;
-        for (Map.Entry<RewardTier, Double> entry : rewardProbabilityMap.entrySet()) {
-            cumulativeProbability += entry.getValue();
-            if (randDouble <= cumulativeProbability) {
-                return entry.getKey();
-            }
-        }
-        return rewardProbabilityMap.isEmpty() ? null : rewardProbabilityMap.keySet().iterator().next(); // Should ideally not happen
-    }
-
-
-    /**
      * Generate a random reward tier based on set probability and pity for a player
      *
-     * @return Generated RewardTier
+     * @return Generated RewardTier, or null if an error occurs
      */
     public RewardTier generateRewardTier(GachaPlayer gachaPlayer) {
         // Check for hard pity first
-        for (RewardTier rt : rewardProbabilityMap.keySet()) {
+        List<RewardTier> tiersByPityPriority = new ArrayList<>(rewardProbabilityMap.keySet());
+        // Optional: Sort tiersByPityPriority if a specific order for checking multiple met pities is desired.
+        // For instance, prioritize higher rarity tiers if their pity is met simultaneously.
+        // Example: tiersByPityPriority.sort(Comparator.comparingDouble(rt -> rewardProbabilityMap.get(rt))); // Ascending chance (higher rarity first)
+
+        for (RewardTier rt : tiersByPityPriority) {
             if (rt.isPityEnabled() && gachaPlayer.getPity(this, rt) >= rt.getPityLimit() - 1) {
-                // If multiple pities are hit, the one with lower original chance (higher rarity) might be prioritized
-                // or the first one encountered. For simplicity, let's take the first one hit by pity.
-                // This part might need more sophisticated logic if multiple pities can be hit simultaneously.
-                // Current logic: guarantees the specific tier if its pity is hit.
-                return rt;
+                return rt; // Pity hit for this tier
             }
         }
 
-        // If no hard pity is hit, roll based on chances
+        // If no hard pity is hit, roll based on chances using cumulative probability
         double randDouble = Math.random();
         double cumulativeProbability = 0.0;
+        // Ensure rewardProbabilityMap is iterated in a consistent order if chances are very specific
+        // (LinkedHashMap maintains insertion order, which is sorted by chance in sortProbabilityMap)
         for (Map.Entry<RewardTier, Double> entry : rewardProbabilityMap.entrySet()) {
             cumulativeProbability += entry.getValue();
             if (randDouble <= cumulativeProbability) {
                 return entry.getKey();
             }
         }
-        // Fallback, should not be reached if probabilities sum to 1.0 (or close for floating point)
-        return rewardProbabilityMap.isEmpty() ? null : rewardProbabilityMap.values().iterator().next().getKey();
-    }
 
-    // New method for 50/50 logic
-    private Reward determineSpecial5StarReward(GachaPlayer gachaPlayer, RewardTier fiveStarTier) {
-        if (fiveStarTier == null || featured5StarRewardNames.isEmpty()) {
-            // Configuration error, or not the 5-star tier. Fallback to standard generation.
-            return fiveStarTier != null ? fiveStarTier.generateReward() : null;
+        // Fallback if probabilities don't sum to 1.0 or map is empty
+        if (!rewardProbabilityMap.isEmpty()) {
+            Bukkit.getLogger().log(Level.WARNING, "[Wish] Crate '" + name + "' reward tier probabilities might not sum to 1.0 or an issue occurred. Falling back to first configured tier.");
+            return rewardProbabilityMap.keySet().iterator().next();
         }
 
-        Reward selectedReward = null;
+        Bukkit.getLogger().log(Level.SEVERE, "[Wish] Reward probability map is empty for crate: " + this.name + ". Cannot generate a reward tier.");
+        return null;
+    }
+
+    // Method for 50/50 logic
+    private Reward determineSpecial5StarReward(GachaPlayer gachaPlayer, RewardTier fiveStarTier) {
+        if (fiveStarTier == null || !fiveStarTier.getName().equalsIgnoreCase(this.fiveStarTierKeyName) || featured5StarRewardNames.isEmpty()) {
+            Bukkit.getLogger().log(Level.WARNING, "[Wish] Attempted 50/50 logic on non-5star tier or missing configuration for crate: " + name);
+            return fiveStarTier != null ? fiveStarTier.generateReward() : null; // Fallback to standard generation if it's a tier
+        }
+
+        Reward selectedReward;
         Random random = new Random();
 
-        List<Reward> all5StarRewardsInTier = new ArrayList<>(fiveStarTier.getRewards());
-        List<Reward> actualFeaturedRewards = all5StarRewardsInTier.stream()
+        List<Reward> allRewardsInTier = new ArrayList<>(fiveStarTier.getRewards());
+        List<Reward> actualFeaturedRewards = allRewardsInTier.stream()
                 .filter(r -> featured5StarRewardNames.contains(r.getName()))
                 .collect(Collectors.toList());
 
-        if (actualFeaturedRewards.isEmpty()) { // Config error: featured names don't match actual rewards
-            Bukkit.getLogger().log(Level.WARNING, "[Wish] Crate '" + name + "' has no actual featured rewards matching Featured-5Star-Reward-Names in its 5-star tier. Giving a random 5-star.");
+        if (actualFeaturedRewards.isEmpty()) {
+            Bukkit.getLogger().log(Level.WARNING, "[Wish] Crate '" + name + "' (50/50 banner) has Featured-5Star-Reward-Names defined, but no matching rewards found in the '" + fiveStarTierKeyName + "' tier. Giving a random reward from the tier.");
             return fiveStarTier.generateReward(); // Fallback
         }
 
         if (gachaPlayer.isNext5StarGuaranteedFeatured(this)) {
-            // Player lost previous 50/50, guaranteed featured.
             selectedReward = actualFeaturedRewards.get(random.nextInt(actualFeaturedRewards.size()));
             gachaPlayer.resetLimitedBannerGuarantee(this);
         } else {
-            // Player is on their 50/50 chance
             if (random.nextBoolean()) { // 50% chance to win 50/50 (get featured)
                 selectedReward = actualFeaturedRewards.get(random.nextInt(actualFeaturedRewards.size()));
-                // Optional: reset guarantee if they win 50/50, or keep it so next is also 50/50.
-                // Most games keep it as 50/50 until a loss. So, no change to guarantee status here.
-                // gachaPlayer.resetLimitedBannerGuarantee(this); // Uncomment if winning 50/50 resets it.
+                // gachaPlayer.resetLimitedBannerGuarantee(this); // Typically, winning 50/50 means next is also 50/50. No status change.
             } else { // 50% chance to lose 50/50 (get non-featured 5-star)
-                List<Reward> nonFeatured5Stars = all5StarRewardsInTier.stream()
+                List<Reward> nonFeaturedRewards = allRewardsInTier.stream()
                         .filter(r -> !featured5StarRewardNames.contains(r.getName()))
                         .collect(Collectors.toList());
 
-                if (!nonFeatured5Stars.isEmpty()) {
-                    selectedReward = nonFeatured5Stars.get(random.nextInt(nonFeatured5Stars.size()));
+                if (!nonFeaturedRewards.isEmpty()) {
+                    selectedReward = nonFeaturedRewards.get(random.nextInt(nonFeaturedRewards.size()));
                 } else {
-                    // Fallback: If only featured items exist in the 5-star pool (config error or by design)
-                    // In this case, "losing" 50/50 still gives a featured item.
+                    // Fallback: If by some misconfiguration only featured items exist in the 5-star pool
+                    Bukkit.getLogger().log(Level.INFO, "[Wish] Crate '" + name + "' 50/50 loss resulted in a featured item as no non-featured rewards are available in its '" + fiveStarTierKeyName + "' tier.");
                     selectedReward = actualFeaturedRewards.get(random.nextInt(actualFeaturedRewards.size()));
-                    Bukkit.getLogger().log(Level.INFO, "[Wish] Crate '" + name + "' 50/50 loss resulted in a featured item as no non-featured 5-stars are available.");
                 }
                 gachaPlayer.setNext5StarGuaranteedFeatured(this, true); // Guarantee for next time
             }
         }
         return selectedReward;
     }
-
 
     public LinkedHashSet<Reward> getAllRewards() {
         LinkedHashSet<Reward> rewards = new LinkedHashSet<>();
@@ -172,8 +147,8 @@ public class Crate {
         return name;
     }
 
-    public Optional<RewardTier> getRewardTier(String tierName) {
-        return getRewardTiers().stream().filter((r) -> r.getName().equalsIgnoreCase(tierName)).findFirst();
+    public Optional<RewardTier> getRewardTier(String tierNameLookup) {
+        return getRewardTiers().stream().filter((r) -> r.getName().equalsIgnoreCase(tierNameLookup)).findFirst();
     }
 
     public Set<RewardTier> getRewardTiers() {
@@ -184,7 +159,6 @@ public class Crate {
         return uuid;
     }
 
-    // Getter for the new 50/50 banner flag
     public boolean isLimited5050Banner() {
         return isLimited5050Banner;
     }
@@ -194,7 +168,7 @@ public class Crate {
             if (crateLocation.getBlockX() == location.getBlockX()
                     && crateLocation.getBlockY() == location.getBlockY()
                     && crateLocation.getBlockZ() == location.getBlockZ()
-                    && Objects.equals(crateLocation.getWorld(), location.getWorld())) { // Added Objects.equals for world
+                    && Objects.equals(crateLocation.getWorld(), location.getWorld())) {
                 return true;
             }
         }
@@ -206,231 +180,249 @@ public class Crate {
     }
 
     public void loadFrom(ConfigurationSection config) {
-        ConfigurationSection rewardTiersSection = config.getConfigurationSection("Reward-Tiers");
-
         this.uuid = UUID.fromString(config.getString("UUID", UUID.randomUUID().toString()));
 
         try {
             this.animationType = AnimationType.valueOf(config.getString("Animation-Type", "INTERFACE").toUpperCase());
         } catch (IllegalArgumentException e) {
             this.animationType = AnimationType.INTERFACE;
-            Bukkit.getLogger().log(Level.WARNING, "[Wish] Invalid animation type specified for crate `" + name + "`, defaulting to INTERFACE.");
+            Bukkit.getLogger().log(Level.WARNING, "[Wish] Invalid animation type for crate '" + name + "'. Defaulting to INTERFACE.");
         }
 
-        // Load 50/50 specific settings
         this.isLimited5050Banner = config.getBoolean("Is-Limited-5050-Banner", false);
         this.featured5StarRewardNames = config.getStringList("Featured-5Star-Reward-Names");
-        this.fiveStarTierKeyName = config.getString("Five-Star-Tier-Name", "five-star"); // Make 5-star tier name configurable
+        this.fiveStarTierKeyName = config.getString("Five-Star-Tier-Name", "five-star"); // Load the key name for the 5-star tier
 
-        // Load reward tiers
+        ConfigurationSection rewardTiersSection = config.getConfigurationSection("Reward-Tiers");
         if (rewardTiersSection != null) {
             double cumulativeChanceCheck = 0.0;
-            for (String rewardTierName : rewardTiersSection.getKeys(false)) {
-                ConfigurationSection rewardTierConfig = rewardTiersSection.getConfigurationSection(rewardTierName);
-                RewardTier rewardTier = new RewardTier(rewardTierName);
-                double chance = rewardTiersSection.getDouble(rewardTierName + ".Chance", 0.0) / 100.0; // Ensure chance is a fraction
+            for (String rewardTierNameKey : rewardTiersSection.getKeys(false)) {
+                ConfigurationSection rewardTierConfig = rewardTiersSection.getConfigurationSection(rewardTierNameKey);
+                if (rewardTierConfig == null) {
+                    Bukkit.getLogger().log(Level.WARNING, "[Wish] Missing configuration section for reward tier '" + rewardTierNameKey + "' in crate '" + name + "'.");
+                    continue;
+                }
+                RewardTier rewardTier = new RewardTier(rewardTierNameKey); // Use the key as the name
+                rewardTier.loadFrom(rewardTierConfig); // Load before getting chance
+
+                double chance = rewardTiersSection.getDouble(rewardTierNameKey + ".Chance", 0.0) / 100.0;
                 cumulativeChanceCheck += chance;
 
-                if (rewardTierConfig != null) {
-                    rewardTier.loadFrom(rewardTierConfig);
-                    rewardProbabilityMap.put(rewardTier, chance);
-                    if (rewardTierName.equalsIgnoreCase(this.fiveStarTierKeyName)) {
-                        this.resolvedFiveStarTier = rewardTier; // Store the 5-star tier object
-                    }
-                } else {
-                    Bukkit.getLogger().log(Level.WARNING, "[Wish] Configuration section for reward tier '" + rewardTierName + "' in crate '" + name + "' is missing.");
+                rewardProbabilityMap.put(rewardTier, chance);
+
+                if (rewardTierNameKey.equalsIgnoreCase(this.fiveStarTierKeyName)) {
+                    this.resolvedFiveStarTier = rewardTier;
                 }
             }
-            if (Math.abs(cumulativeChanceCheck - 1.0) > 0.001 && !rewardProbabilityMap.isEmpty()) { // Allow small floating point inaccuracies
-                Bukkit.getLogger().log(Level.WARNING, "[Wish] Probabilities for reward tiers in crate '" + name + "' do not sum up to 100% (sum: " + (cumulativeChanceCheck * 100) + "%). This may lead to unexpected behavior.");
+            if (Math.abs(cumulativeChanceCheck - 1.0) > 0.001 && !rewardProbabilityMap.isEmpty()) {
+                Bukkit.getLogger().log(Level.WARNING, "[Wish] Probabilities for reward tiers in crate '" + name + "' do not sum to 100% (sum: " + String.format("%.2f", cumulativeChanceCheck * 100) + "%). This may lead to unexpected behavior.");
             }
-            sortProbabilityMap(); // Sorts by chance value, ensure this is intended for your selection logic
+            sortProbabilityMap();
+            // Resolve the five star tier again after sorting if it wasn't found by exact key name during initial loop
+            if (this.resolvedFiveStarTier == null && this.isLimited5050Banner) {
+                Optional<RewardTier> foundTier = getRewardTier(this.fiveStarTierKeyName);
+                if (foundTier.isPresent()) {
+                    this.resolvedFiveStarTier = foundTier.get();
+                } else {
+                    Bukkit.getLogger().log(Level.WARNING, "[Wish] Crate '" + name + "' is a 50/50 banner but could not resolve the five-star tier named: '" + this.fiveStarTierKeyName + "'. 50/50 logic may fail.");
+                }
+            }
+
         } else {
             Bukkit.getLogger().log(Level.WARNING, "[Wish] No reward tiers specified for crate `" + name + "`");
         }
 
-
-        // Load crate locations
         for (String locationString : config.getStringList("Locations")) {
             String[] locationArgs = locationString.split(" ");
             if (locationArgs.length < 4) {
-                Bukkit.getLogger().log(Level.SEVERE, "[Wish] Malformed location string for crate `" + name + "`: " + locationString);
+                Bukkit.getLogger().log(Level.SEVERE, "[Wish] Malformed location string for `" + name + "`: " + locationString);
                 continue;
             }
             World world = Bukkit.getWorld(locationArgs[0]);
-            int x, y, z;
-
             if (world == null) {
-                Bukkit.getLogger().log(Level.SEVERE, "[Wish] Invalid world name specified in crate locations for `" + name + "`: " + locationArgs[0]);
+                Bukkit.getLogger().log(Level.SEVERE, "[Wish] Invalid world in location for `" + name + "`: " + locationArgs[0]);
                 continue;
             }
             try {
-                x = Integer.parseInt(locationArgs[1]);
-                y = Integer.parseInt(locationArgs[2]);
-                z = Integer.parseInt(locationArgs[3]);
+                crateLocations.add(new Location(world, Integer.parseInt(locationArgs[1]), Integer.parseInt(locationArgs[2]), Integer.parseInt(locationArgs[3])));
             } catch (NumberFormatException e) {
-                Bukkit.getLogger().log(Level.SEVERE, "[Wish] Invalid x, y, or z number format in crate locations for `" + name + "`: " + locationString);
-                continue;
+                Bukkit.getLogger().log(Level.SEVERE, "[Wish] Invalid number in location for `" + name + "`: " + locationString);
             }
-            crateLocations.add(new Location(world, x, y, z));
         }
     }
 
     public void open(Wish plugin, GachaPlayer gachaPlayer, CrateSession crateSession, int pullCount, Menu menu) {
-        // Crate crate = crateSession.getCrate(); // 'this' is the crate instance
+        Player player = gachaPlayer.getPlayer();
+        if (player == null || !player.isOnline()) {
+            Bukkit.getLogger().log(Level.WARNING, "[Wish] Attempted to open crate for offline or null player: " + gachaPlayer.getUuid());
+            return;
+        }
 
         switch (animationType) {
             case NONE -> {
                 for (int i = 0; i < pullCount; i++) {
-                    RewardTier actualHitTier = generateRewardTier(gachaPlayer); // Applies hard pity
+                    RewardTier actualHitTier = generateRewardTier(gachaPlayer);
                     if (actualHitTier == null) {
-                        Bukkit.getLogger().log(Level.SEVERE, "[Wish] Failed to generate a reward tier for crate " + name);
+                        Bukkit.getLogger().log(Level.SEVERE, "[Wish] CRITICAL: Failed to generate a reward tier for crate " + name + " during NONE animation. Pull " + (i + 1));
                         continue;
                     }
 
                     Reward finalRewardToGive;
-                    boolean isDesignatedFiveStar = actualHitTier == this.resolvedFiveStarTier; // Check if it's the specific 5-star tier object
+                    boolean isTheDesignatedFiveStarTier = actualHitTier == this.resolvedFiveStarTier && this.resolvedFiveStarTier != null;
 
-                    if (this.isLimited5050Banner && isDesignatedFiveStar) {
+                    if (this.isLimited5050Banner && isTheDesignatedFiveStarTier) {
                         finalRewardToGive = determineSpecial5StarReward(gachaPlayer, actualHitTier);
                     } else {
                         finalRewardToGive = actualHitTier.generateReward();
                     }
 
                     if (finalRewardToGive == null) {
-                        Bukkit.getLogger().log(Level.SEVERE, "[Wish] Failed to generate a final reward for crate " + name + " tier " + actualHitTier.getName());
+                        Bukkit.getLogger().log(Level.SEVERE, "[Wish] CRITICAL: Failed to generate a final reward for crate " + name + " from tier " + actualHitTier.getName() + ". Pull " + (i + 1));
                         continue;
                     }
 
-                    finalRewardToGive.execute(gachaPlayer.getPlayer());
+                    finalRewardToGive.execute(player);
 
-                    // Pity update
                     if (actualHitTier.isPityEnabled()) {
                         gachaPlayer.resetPity(this, actualHitTier);
                     }
-                    gachaPlayer.increasePity(this, actualHitTier, 1); // Increments pity for all other enabled tiers
+                    gachaPlayer.increasePity(this, actualHitTier, 1);
                 }
             }
             case INTERFACE -> {
                 if (!(menu instanceof CrateOpenMenu crateOpenMenu)) {
-                    Lang.ERR_UNKNOWN.send(gachaPlayer.getPlayer());
-                    break;
+                    Lang.ERR_UNKNOWN.send(player);
+                    Bukkit.getLogger().log(Level.SEVERE, "[Wish] Menu provided for INTERFACE animation for crate " + name + " is not a CrateOpenMenu instance.");
+                    return;
                 }
 
-                // Pre-generate rewards for INTERFACE type
                 List<RewardTier> obtainedRewardTiers = new ArrayList<>();
                 List<Reward> obtainedRewards = new ArrayList<>();
 
                 for (int i = 0; i < pullCount; i++) {
                     RewardTier actualHitTier = generateRewardTier(gachaPlayer);
                     if (actualHitTier == null) {
-                        Bukkit.getLogger().log(Level.SEVERE, "[Wish] Failed to generate a reward tier for crate " + name + " (INTERFACE anim pull " + (i+1) + ")");
-                        // Add a placeholder or skip? For now, let's skip adding nulls.
+                        Bukkit.getLogger().log(Level.SEVERE, "[Wish] CRITICAL: Failed to generate a reward tier for crate " + name + " (INTERFACE anim). Pull " + (i + 1));
                         continue;
                     }
 
                     Reward finalRewardToGive;
-                    boolean isDesignatedFiveStar = actualHitTier == this.resolvedFiveStarTier;
+                    boolean isTheDesignatedFiveStarTier = actualHitTier == this.resolvedFiveStarTier && this.resolvedFiveStarTier != null;
 
-                    if (this.isLimited5050Banner && isDesignatedFiveStar) {
+                    if (this.isLimited5050Banner && isTheDesignatedFiveStarTier) {
                         finalRewardToGive = determineSpecial5StarReward(gachaPlayer, actualHitTier);
                     } else {
                         finalRewardToGive = actualHitTier.generateReward();
                     }
 
                     if (finalRewardToGive == null) {
-                        Bukkit.getLogger().log(Level.SEVERE, "[Wish] Failed to generate a final reward for crate " + name + " tier " + actualHitTier.getName() + " (INTERFACE anim pull " + (i+1) + ")");
+                        Bukkit.getLogger().log(Level.SEVERE, "[Wish] CRITICAL: Failed to generate a final reward for crate " + name + " from tier " + actualHitTier.getName() + " (INTERFACE anim). Pull " + (i + 1));
                         continue;
                     }
 
                     obtainedRewardTiers.add(actualHitTier);
                     obtainedRewards.add(finalRewardToGive);
 
-                    // Pity update
                     if (actualHitTier.isPityEnabled()) {
                         gachaPlayer.resetPity(this, actualHitTier);
                     }
                     gachaPlayer.increasePity(this, actualHitTier, 1);
                 }
-                // IMPORTANT: CrateOpenMenu.open() signature needs to be changed to accept these lists
+                // This call now REQUIRES CrateOpenMenu.java to have the updated open() signature
                 crateOpenMenu.open(gachaPlayer, crateSession, pullCount, obtainedRewardTiers, obtainedRewards);
             }
             case PHYSICAL -> {
                 Location crateLocation = crateSession.getCrateLocation();
-                // Store results of pulls to execute animations and then give rewards
+                if (crateLocation == null || crateLocation.getWorld() == null) {
+                    Bukkit.getLogger().log(Level.SEVERE, "[Wish] Crate location or world is null for PHYSICAL animation for crate " + name);
+                    Lang.ERR_UNKNOWN.send(player);
+                    return;
+                }
                 List<RewardTierWithReward> physicalPullResults = new ArrayList<>();
 
                 for (int i = 0; i < pullCount; i++) {
                     RewardTier actualHitTier = generateRewardTier(gachaPlayer);
-                    if (actualHitTier == null) continue; // Error logged inside generateRewardTier if needed
+                    if (actualHitTier == null) {
+                        Bukkit.getLogger().log(Level.SEVERE, "[Wish] CRITICAL: Failed to generate a reward tier for crate " + name + " (PHYSICAL anim). Pull " + (i + 1));
+                        continue;
+                    }
 
                     Reward finalRewardToGive;
-                    boolean isDesignatedFiveStar = actualHitTier == this.resolvedFiveStarTier;
+                    boolean isTheDesignatedFiveStarTier = actualHitTier == this.resolvedFiveStarTier && this.resolvedFiveStarTier != null;
 
-                    if (this.isLimited5050Banner && isDesignatedFiveStar) {
+                    if (this.isLimited5050Banner && isTheDesignatedFiveStarTier) {
                         finalRewardToGive = determineSpecial5StarReward(gachaPlayer, actualHitTier);
                     } else {
                         finalRewardToGive = actualHitTier.generateReward();
                     }
-                    if (finalRewardToGive == null) continue;
 
+                    if (finalRewardToGive == null) {
+                        Bukkit.getLogger().log(Level.SEVERE, "[Wish] CRITICAL: Failed to generate a final reward for crate " + name + " from tier " + actualHitTier.getName() + " (PHYSICAL anim). Pull " + (i + 1));
+                        continue;
+                    }
 
                     physicalPullResults.add(new RewardTierWithReward(actualHitTier, finalRewardToGive));
 
-                    // Pity update
                     if (actualHitTier.isPityEnabled()) {
                         gachaPlayer.resetPity(this, actualHitTier);
                     }
                     gachaPlayer.increasePity(this, actualHitTier, 1);
                 }
 
-
-                // Physical animation logic, using the pre-generated physicalPullResults
                 Location particleStartLoc = crateLocation.clone().add(0.5, 0.8, 0.5);
                 crateSession.setOpenPhase(CrateOpenPhase.OPENING);
                 setLocationInUse(crateLocation, true);
 
-                // BukkitRunnable for individual particle streams
-                new BukkitRunnable() {
-                    int currentPullIndex = 0;
+                // Initialize or get the endLocationMap from CrateSession
+                HashMap<Integer, Location> endLocationMap = crateSession.getPhysicalAnimationEndLocationMap();
+                if (endLocationMap == null) {
+                    endLocationMap = new HashMap<>();
+                    crateSession.setPhysicalAnimationEndLocationMap(endLocationMap);
+                }
+                // Clear any old data from a previous session if it wasn't cleared
+                endLocationMap.clear();
 
+
+                final HashMap<Integer, Location> finalEndLocationMap = endLocationMap; // For use in Runnable
+
+                new BukkitRunnable() { // Particle stream launcher
+                    int currentPullIndex = 0;
                     @Override
                     public void run() {
-                        if (currentPullIndex >= physicalPullResults.size()) {
-                            // All particle streams launched, now start reward giving timer
+                        if (currentPullIndex >= physicalPullResults.size() || player == null || !player.isOnline()) {
+                            // All streams launched, now schedule reward giving
                             new BukkitRunnable() {
                                 int rewardGiveIndex = 0;
-                                final HashMap<Integer, Location> endLocationMap = (HashMap<Integer, Location>) crateSession.getMetadata("endLocationMap");
-
-
                                 @Override
                                 public void run() {
-                                    if (rewardGiveIndex >= physicalPullResults.size()) {
+                                    if (rewardGiveIndex >= physicalPullResults.size() || player == null || !player.isOnline()) {
                                         setLocationInUse(crateLocation, false);
                                         crateSession.setOpenPhase(CrateOpenPhase.COMPLETE);
+                                        if(crateSession.getPhysicalAnimationEndLocationMap() != null) crateSession.getPhysicalAnimationEndLocationMap().clear(); // Clean up map
                                         plugin.getSessionManager().clearSession(gachaPlayer.getUuid());
                                         cancel();
                                         return;
                                     }
 
                                     RewardTierWithReward result = physicalPullResults.get(rewardGiveIndex);
-                                    Location endLoc = endLocationMap != null ? endLocationMap.get(rewardGiveIndex) : particleStartLoc.clone().add(0, 1.5, 0); // Fallback endLoc
+                                    Location endLoc = finalEndLocationMap.get(rewardGiveIndex);
+                                    // Fallback if map somehow doesn't have the key, though it should
+                                    if (endLoc == null) endLoc = particleStartLoc.clone().add(0,1.5,0);
 
-                                    if (result.rewardTier() == null || result.reward() == null || endLoc == null || endLoc.getWorld() == null) {
-                                        Bukkit.getLogger().log(Level.WARNING, "[Wish] Null data for physical reward giving for crate " + name);
+
+                                    if (result.rewardTier() == null || result.reward() == null || endLoc.getWorld() == null) {
+                                        Bukkit.getLogger().log(Level.WARNING, "[Wish] Null data for physical reward giving (idx " + rewardGiveIndex + ") for crate " + name);
                                         rewardGiveIndex++;
                                         return;
                                     }
 
                                     Particle.DustOptions dustOptions = new Particle.DustOptions(result.rewardTier().getColor(), 1);
-                                    if (gachaPlayer.getPlayer() != null) {
-                                        gachaPlayer.getPlayer().playSound(particleStartLoc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.9f, 2.0f);
-                                        result.reward().execute(gachaPlayer.getPlayer());
-                                    }
+                                    player.playSound(particleStartLoc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.9f, 2.0f);
+                                    result.reward().execute(player);
                                     ParticleUtil.spawnStraightLine(endLoc, particleStartLoc, Particle.REDSTONE, dustOptions, 1);
                                     rewardGiveIndex++;
                                 }
-                            }.runTaskTimer(plugin, 60L, 7L * physicalPullResults.size() > 0 ? (long)(20 * 0.7 / physicalPullResults.size()) : 7L); // Adjust timing based on pull count
+                            }.runTaskTimer(plugin, 60L, Math.max(7L, (long)(20 * 0.7 / Math.max(1, physicalPullResults.size()))));
                             cancel();
                             return;
                         }
@@ -438,50 +430,38 @@ public class Crate {
                         RewardTierWithReward result = physicalPullResults.get(currentPullIndex);
                         Particle.DustOptions dustOptions = new Particle.DustOptions(result.rewardTier().getColor(), 1);
 
-                        // Calculate end location for this particle stream
-                        // This needs to be stored if CrateSession.getMetadata() is how we retrieve it later
-                        // For now, let's assume CrateSession can store a map of index to endLocation
-                        HashMap<Integer, Location> endLocationMap = (HashMap<Integer, Location>) crateSession.getMetadata("endLocationMap");
-                        if (endLocationMap == null) {
-                            endLocationMap = new HashMap<>();
-                            crateSession.setMetadata("endLocationMap", endLocationMap);
-                        }
                         double xOffset = new Random().nextDouble(0.4 + (currentPullIndex * .15)) * (new Random().nextBoolean() ? -1 : 1);
                         double zOffset = new Random().nextDouble(0.4 + (currentPullIndex * .15)) * (new Random().nextBoolean() ? -1 : 1);
                         Location endLocation = particleStartLoc.clone().add(xOffset, 1.5, zOffset);
-                        endLocationMap.put(currentPullIndex, endLocation);
+                        finalEndLocationMap.put(currentPullIndex, endLocation); // Store for the reward giver
 
                         ParticleUtil.spawnCurvedLine(plugin, particleStartLoc, endLocation, Particle.REDSTONE, dustOptions, 1);
-                        if (gachaPlayer.getPlayer() != null) {
-                            gachaPlayer.getPlayer().playSound(particleStartLoc, Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f);
-                        }
+                        player.playSound(particleStartLoc, Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f);
                         currentPullIndex++;
                     }
-                }.runTaskTimer(plugin, 0, 7L); // Stagger particle streams
+                }.runTaskTimer(plugin, 0, 7L);
 
-                // BukkitRunnable for central cloud effect
-                new BukkitRunnable() {
-                    int cloudEffectCounter = 0; // Changed name to avoid conflict
+                new BukkitRunnable() { // Central cloud effect
+                    int cloudEffectCounter = 0;
                     final Location cloudLoc = particleStartLoc.clone().add(0, 1.5, 0);
-                    final List<Location> baseParticleLocations = MathUtil.circle(cloudLoc, 0.5, false);
-                    List<Location> currentParticleLocations = new ArrayList<>(baseParticleLocations);
+                    List<Location> currentParticleLocations = new ArrayList<>(MathUtil.circle(cloudLoc, 0.5, false));
                     final Particle.DustOptions dustOptions = new Particle.DustOptions(Color.SILVER, 1);
 
                     @Override
                     public void run() {
-                        if (crateSession.getOpenPhase() == CrateOpenPhase.COMPLETE || gachaPlayer.getPlayer() == null) {
+                        if (crateSession.getOpenPhase() == CrateOpenPhase.COMPLETE || player == null || !player.isOnline()) {
                             cancel();
                             return;
                         }
 
-                        gachaPlayer.getPlayer().playSound(cloudLoc, Sound.ENTITY_ENDER_DRAGON_FLAP, 0.7f, 0.5f);
+                        player.playSound(cloudLoc, Sound.ENTITY_ENDER_DRAGON_FLAP, 0.7f, 0.5f);
                         for (Location particleLoc : currentParticleLocations) {
                             if (particleLoc.getWorld() == null) continue;
                             particleLoc.getWorld().spawnParticle(Particle.REDSTONE, particleLoc, 1, dustOptions);
                         }
 
-                        if (cloudEffectCounter < pullCount -1) { // Expand up to pullCount-1 times
-                            currentParticleLocations.addAll(MathUtil.circle(cloudLoc, 0.5 + ((cloudEffectCounter +1) * .15), true));
+                        if (cloudEffectCounter < pullCount - 1) {
+                            currentParticleLocations.addAll(MathUtil.circle(cloudLoc, 0.5 + ((cloudEffectCounter + 1) * .15), true));
                             cloudEffectCounter++;
                         }
                     }
@@ -489,7 +469,6 @@ public class Crate {
             }
         }
     }
-
 
     public void removeLocation(Location location) {
         crateLocations.removeIf(crateLocation -> crateLocation.getBlockX() == location.getBlockX()
@@ -502,32 +481,14 @@ public class Crate {
         this.inUse.put(location, inUse);
     }
 
-    /**
-     * Sort the probability map. The original implementation sorts by probability value.
-     * For weighted random selection, the order doesn't strictly matter as long as
-     * cumulative probability is used, but often configs are easier to read if sorted.
-     * Genshin-style Gachas usually define fixed percentages, and the iteration order
-     * with cumulative sum ensures correctness.
-     */
     private void sortProbabilityMap() {
-        // Convert to list
         List<Map.Entry<RewardTier, Double>> list = new ArrayList<>(rewardProbabilityMap.entrySet());
-
-        // Sort the list based on the probability (Double value).
-        // This might be for display or specific processing order.
-        // For the cumulative probability generation, the order of entries with the *same* probability doesn't matter.
-        // If you want to prioritize higher rarity (lower chance value) in case of ties or for display, sort accordingly.
-        // Sorting by value (chance) ascending:
-        list.sort(Map.Entry.comparingByValue());
-
-        // Re-populate the LinkedHashMap to maintain insertion order (which is now sorted order)
+        list.sort(Map.Entry.comparingByValue()); // Sorts by chance, ascending (lower chance first)
         rewardProbabilityMap.clear();
         for (Map.Entry<RewardTier, Double> entry : list) {
             rewardProbabilityMap.put(entry.getKey(), entry.getValue());
         }
     }
 
-    // Helper record for PHYSICAL animation type
     private record RewardTierWithReward(RewardTier rewardTier, Reward reward) {}
-
 }

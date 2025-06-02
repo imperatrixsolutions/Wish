@@ -86,7 +86,7 @@ public class RewardTier {
             }
             sortProbabilityMap();
         } else {
-            Bukkit.getLogger().log(Level.WARNING, "[GachaCrates] No rewards specified for reward tier `" + this.name + "`");
+            Bukkit.getLogger().log(Level.WARNING, "[Wish] No rewards specified for reward tier `" + this.name + "`");
         }
     }
 

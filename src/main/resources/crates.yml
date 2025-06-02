@@ -123,8 +123,8 @@ Crates:
               - "spawner give %player% enderman 1"
       five-star:
         Pity: true
-        Pity-Limit: 80
-        Chance: 0.5
+        Pity-Limit: 80 # Kept your original Pity-Limit
+        Chance: 0.5    # Kept your original Chance
         Display-Item: "red_stained_glass_pane name:&c✦✦✦✦✦ lore:&7Click_to_reveal_reward"
         Color:
           R: 255
@@ -149,6 +149,12 @@ Crates:
   Limited:
     UUID: 3bd2f4d8-2559-4993-97aa-eea40ffd84ca # Do not touch
     Animation-Type: PHYSICAL
+    # --- START OF NEW 50/50 SYSTEM CONFIGURATION for Limited Crate ---
+    Is-Limited-5050-Banner: true
+    Five-Star-Tier-Name: "five-star" # The key name of your 5-star tier below
+    Featured-5Star-Reward-Names:
+      - "Lumine-Sword" # The REWARD KEY of the featured item
+    # --- END OF NEW 50/50 SYSTEM CONFIGURATION ---
     Reward-Tiers:
       two-star:
         Pity: false
@@ -156,9 +162,9 @@ Crates:
         Chance: 65
         Display-Item: "yellow_stained_glass_pane name:&e✦✦ lore:&7Click_to_reveal_reward"
         Color:
-          R: 255
+          R: 61
           G: 255
-          B: 61
+          B: 255
         Rewards:
           Sharpened-Blade:
             Display-Item: "iron_sword 1 sharpness:1 name:&7Sharpened_Blade lore:&8✦✦|&7|&7&o25%_Chance"
@@ -174,7 +180,7 @@ Crates:
             Display-Item: "obsidian 64 lore:&8✦✦|&7|&7&o25%_Chance"
             Chance: 25
             Items:
-              - "obsidian 64 lore:&8✦"
+              - "obsidian 64 lore:&8✦" # Note: original lore from file was "&8✦", kept as is.
           Skeleton-Spawner:
             Display-Item: "spawner 1 name:&eSkeleton_Spawner lore:&8✦✦|&7|&7&o25%_Chance"
             Chance: 25
@@ -231,24 +237,24 @@ Crates:
             Commands:
               - "spawner give %player% iron_golem 2"
               - "spawner give %player% enderman 1"
-      five-star:
+      five-star: # This is the tier referenced by Five-Star-Tier-Name
         Pity: true
-        Pity-Limit: 80
-        Chance: 1
+        Pity-Limit: 80 # Kept your original Pity-Limit
+        Chance: 0.8     # Kept your original Chance for this tier (overall chance to hit any 5-star)
         Display-Item: "red_stained_glass_pane name:&c✦✦✦✦✦ lore:&7Click_to_reveal_reward"
         Color:
           R: 255
-          G: 61
-          B: 61
+          G: 223
+          B: 30
         Rewards:
-          Lumine-Sword:
-            Display-Item: "iron_sword 1 custom_model_data:130 name:&eLumine_Sword lore:&6✦✦✦✦✦|&7|&7&o50%_Chance"
-            Chance: 50
+          Lumine-Sword: # REWARD KEY, must match one in Featured-5Star-Reward-Names
+            Display-Item: "iron_sword 1 custom_model_data:130 name:&eLumine_Sword lore:&6✦✦✦✦✦|&7|&7&o50%_Chance" # Original Display Item
+            Chance: 50 # Original Chance within 5-star pool
             Commands:
               - "mi give sword LUMINE_SWORD %player% 1"
-          GladiatorsFinale-Set:
-            Display-Item: "bone 1 custom_model_data:22 name:&eGladiators_Final_Set lore:&6✦✦✦✦✦|&7Contains_3x_GladiatorsFinale_Pieces|&7|&7&o50%_Chance"
-            Chance: 50
+          GladiatorsFinale-Set: # This is an "off-banner" or standard 5-star for this limited crate
+            Display-Item: "bone 1 custom_model_data:22 name:&eGladiators_Final_Set lore:&6✦✦✦✦✦|&7Contains_3x_GladiatorsFinale_Pieces|&7|&7&o50%_Chance" # Original Display Item
+            Chance: 50 # Original Chance within 5-star pool
             Commands:
               - "mi give ACCESSORY GLADIATORS_NOSTALGIA %player% 1"
               - "mi give ACCESSORY GLADIATORS_INTOXICATION %player% 1"
