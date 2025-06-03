@@ -33,6 +33,7 @@ imperatrix\wish\struct\crate\Crate$1.class
 imperatrix\wish\struct\crate\CrateSession.class
 imperatrix\wish\commands\CmdTake.class
 imperatrix\wish\listeners\CrateListener.class
+imperatrix\wish\struct\crate\Crate$RewardTierWithReward.class
 imperatrix\wish\file\CustomFile.class
 imperatrix\wish\menu\menus\PullMenu$1.class
 imperatrix\wish\commands\CmdRemove.class

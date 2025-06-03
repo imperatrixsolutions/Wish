@@ -148,7 +148,7 @@ Crates:
               - "spawner give %player% skeleton 6"
   Limited:
     UUID: 3bd2f4d8-2559-4993-97aa-eea40ffd84ca # Do not touch
-    Animation-Type: PHYSICAL
+    Animation-Type:
     # --- START OF NEW 50/50 SYSTEM CONFIGURATION for Limited Crate ---
     Is-Limited-5050-Banner: true
     Five-Star-Tier-Name: "five-star" # The key name of your 5-star tier below
@@ -259,3 +259,104 @@ Crates:
               - "mi give ACCESSORY GLADIATORS_NOSTALGIA %player% 1"
               - "mi give ACCESSORY GLADIATORS_INTOXICATION %player% 1"
               - "mi give ACCESSORY GLADIATORS_DESTINY %player% 1"
+
+  Weapons: # New Crate for Weapons
+    UUID: 4376c189-7b32-4019-a654-91b96373c12e
+    Animation-Type: PHYSICAL
+
+    # --- Configuration for Guaranteed Featured Weapon Banner ---
+    Is-Guaranteed-Featured-Weapon-Banner: true
+    Highest-Weapon-Tier-Name: "five-star-weapon" # Key name for your top weapon tier
+    Featured-Weapon-Names:
+      - "LegendaryBladeOfZeus" # Example: The REWARD KEY of THE featured 5-star weapon
+    # --- End of Configuration ---
+
+    Reward-Tiers:
+      two-star-weapon: # Following your existing tier naming ideas
+        Pity: false
+        Pity-Limit: 0
+        Chance: 55 # Example: 55% for 2-star weapons
+        Display-Item: "stone_sword name:&7★★ Common Weapon"
+        Color: # Example Color: Steel Grey
+          R: 176
+          G: 196
+          B: 222
+        Rewards:
+          TrainingSword:
+            Display-Item: "stone_sword name:&7Training Sword lore:&8★★|&7Basic but reliable."
+            Chance: 50
+            Commands:
+              - "mi give SWORD TRAINING_SWORD %player% 1"
+          HuntingKnife:
+            Display-Item: "iron_hoe name:&7Hunting Knife lore:&8★★|&7Good for starters." # Using hoe as a "knife" visual
+            Chance: 50
+            Commands:
+              - "mi give DAGGER HUNTING_KNIFE %player% 1" # Assuming you have a DAGGER type or similar
+
+      three-star-weapon:
+        Pity: false # Or true if you want pity on 3-star weapons
+        Pity-Limit: 0
+        Chance: 30 # Example: 30% for 3-star weapons
+        Display-Item: "iron_sword name:&9★★★ Uncommon Weapon"
+        Color: # Example Color: Decent Blue
+          R: 65
+          G: 105
+          B: 225
+        Rewards:
+          SteelLongsword:
+            Display-Item: "iron_sword name:&9Steel Longsword lore:&8★★★|&7A common soldier's blade."
+            Chance: 40
+            Commands:
+              - "mi give SWORD STEEL_LONGSWORD %player% 1"
+          ReinforcedShortbow:
+            Display-Item: "bow name:&9Reinforced Shortbow lore:&8★★★|&7Sturdy and dependable."
+            Chance: 30
+            Commands:
+              - "mi give BOW REINFORCED_SHORTBOW %player% 1"
+          BattleAxe:
+            Display-Item: "iron_axe name:&9Battle Axe lore:&8★★★|&7Simple but effective."
+            Chance: 30
+            Commands:
+              - "mi give AXE BATTLE_AXE_SML %player% 1"
+
+      four-star-weapon:
+        Pity: true
+        Pity-Limit: 10
+        Chance: 10
+        Display-Item: "diamond_sword name:&d★★★★ Rare Weapon"
+        Color:
+          R: 138
+          G: 43
+          B: 226
+        Rewards:
+          ElvenWarbow:
+            Display-Item: "bow name:&dElven Warbow lore:&8★★★★|&7Swift and precise."
+            Chance: 30
+            Commands:
+              - "mi give BOW ELVEN_WARBOW %player% 1"
+          DwarvenBattlehammer:
+            Display-Item: "diamond_axe name:&dDwarven Battlehammer lore:&8★★★★|&7Heavy hitting." # Using axe as hammer visual
+            Chance: 35
+            Commands:
+              - "mi give HAMMER DWARVEN_HAMMER %player% 1"
+          ShadowbladeDagger:
+            Display-Item: "netherite_hoe name:&dShadowblade Dagger lore:&8★★★★|&7Quick and silent." # Using netherite hoe as dark dagger
+            Chance: 35
+            Commands:
+              - "mi give DAGGER SHADOWBLADE %player% 1"
+
+      five-star-weapon:
+        Pity: true
+        Pity-Limit: 70
+        Chance: 5     # Example: 5% for the 5-star weapon tier (55+30+10+5 = 100%)
+        Display-Item: "netherite_sword name:&6★★★★★ Legendary Weapon"
+        Color:
+          R: 255
+          G: 223
+          B: 30
+        Rewards:
+          LegendaryBladeOfZeus: # REWARD KEY - must be in 'Featured-Weapon-Names'
+            Display-Item: "netherite_sword 1 name:&6&lBlade of Zeus lore:&6★★★★★|&7The ultimate weapon!"
+            Chance: 100 # If this is the ONLY 5-star possible, its chance within the tier is 100%.
+            Commands:
+              - "mi give SWORD BLADE_OF_ZEUS %player% 1"

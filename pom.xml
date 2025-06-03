@@ -6,7 +6,7 @@
 
     <groupId>imperatrix</groupId>
     <artifactId>Wish</artifactId>
-    <version>5.0</version>
+    <version>5.0.2</version>
     <packaging>jar</packaging>
 
     <name>Wish</name>
